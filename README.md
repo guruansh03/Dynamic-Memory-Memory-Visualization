@@ -188,96 +188,108 @@ The server will start on http://localhost:5000. You should see output like:
 
 Keep this terminal open while using the simulator.
 
-Running the Frontend Client
-The frontend client (project.py) provides the graphical interface to interact with the simulator.
-Open a new terminal in the project directory (or a new tab in your current terminal).
 
-If using a virtual environment, activate it again:
-bash
 
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+## Running the Frontend Client  
+The frontend client (`project.py`) provides the graphical interface to interact with the simulator.  
 
-Run the Pygame client:
+### Steps to Run:  
+1. Open a new terminal in the project directory (or a new tab in your current terminal).  
+2. If using a virtual environment, activate it:  
 
-```bash
+   ```bash
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
 
-python project.py
+3. Run the Pygame client:  
 
-```
-A window will open with the graphical interface titled "Memory Management Visualizer - Pro Edition".
+   ```bash
+   python project.py
+   ```
 
-##**Interacting with the Simulator**
-Select Mode:
-Click one of the mode buttons at the bottom:
-"*Paging*": For fixed-size page allocation.
+4. A window will open with the graphical interface titled **"Memory Management Visualizer - Pro Edition"**.  
 
-"*Segmentation*": For variable-size segment allocation.
+---
 
-"*Virtual Memory*": For paging with swap space.
+## Interacting with the Simulator  
 
-The mode will be displayed in the "*Mode*" field on the right side of the window.
+### Select Mode  
+Click one of the mode buttons at the bottom:  
+- **Paging**: For fixed-size page allocation.  
+- **Segmentation**: For variable-size segment allocation.  
+- **Virtual Memory**: For paging with swap space.  
 
-**Select Algorithm:**
-Click one of the algorithm buttons:
-"*FIFO*": First-In, First-Out replacement.
+The selected mode will be displayed in the **"Mode"** field on the right side of the window.  
 
-"*LRU*": Least Recently Used replacement.
+### Select Algorithm  
+Click one of the algorithm buttons:  
+- **FIFO**: First-In, First-Out replacement.  
+- **LRU**: Least Recently Used replacement.  
 
-The selected algorithm will be displayed in the "*Algorithm*" field on the right.
+The selected algorithm will be displayed in the **"Algorithm"** field on the right.  
 
-**Enter Sequence:**
-In the text input field at the bottom left:
-For Paging and Virtual Memory: Enter a comma-separated list of page numbers (e.g., 0,1,2).
+### Enter Sequence  
+Use the text input field at the bottom left:  
+- **Paging & Virtual Memory**: Enter a comma-separated list of page numbers (e.g., `0,1,2`).  
+- **Segmentation**: Enter segment ID and size pairs in the format `seg_id:size`  
+  - Example: `0:10,1:10` (Segment 0 with 10 KB, Segment 1 with 10 KB).  
 
-For Segmentation: Enter segment ID and size pairs in the format seg_id:size (e.g., 0:10,1:10 for Segment 0 with 10 KB, Segment 1 with 10 KB).
+Press **Enter** or click **"Start"** to parse the sequence.  
 
-Press Enter or click "Start" to parse the sequence.
+### Start Simulation  
+Click the **"Start"** button to initialize the simulation with the entered sequence.  
+- The **"Status"** field on the right will change to **"Running"**.  
 
-##**Start Simulation:**
-Click the "Start" button to initialize the simulation with the entered sequence.
+### Step Through Simulation  
+Click the **"Step"** button to process each request one at a time.  
+- Observe changes in memory frames, swap space (Virtual Memory), free blocks (Segmentation), page/segment tables, and statistics.  
 
-The *"Status"* field on the right will change to "Running".
+### Reset Simulation  
+Click the **"Reset"** button to clear the memory state, reset statistics, and return to the initial state.  
+- The **"Status"** field will change to **"Ready"**.  
 
-**Step Through Simulation:**
-Click the "Step" button to process each request one at a time.
+---
 
-Observe the changes in memory frames, swap space (Virtual Memory), free blocks (Segmentation), page/segment tables, and statistics.
+## Understanding the Interface  
 
-**Reset Simulation:**
-Click the "Reset" button to clear the memory state, reset statistics, and return to the initial state.
+### **Top Section**
+- **Title**: `"Memory Management Visualizer"`.  
+- **Statistics**: Displays:
+  - Page faults (Paging/Virtual Memory).  
+  - Allocation failures (Segmentation).  
+  - Swap operations (Virtual Memory).  
+  - Memory usage percentage.  
 
-The "Status" field will change to "Ready".
+### **Left Section**
+#### Memory Visualization:
+- **Paging**:  
+  - Shows memory frames:  
+    - **Red**: Occupied  
+    - **Green**: Free  
+    - **Yellow flash**: Page fault  
 
-Understanding the Interface
-##**Top Section:**
-Title: "*Memory Management Visualizer*".
+- **Segmentation**:  
+  - Shows memory segments (Red) and free blocks (Green).  
+  - Yellow flash on allocation.  
 
-Statistics: Displays page faults (Paging/Virtual Memory), allocation failures (Segmentation), swap operations (Virtual Memory), and memory usage percentage.
+- **Virtual Memory**:  
+  - Shows memory frames (Top) and swap space (Bottom).  
+  - Yellow flash on page fault.  
 
-##**Left Section:**
-**Memory Visualization:**
--In Paging: Shows memory frames (red if occupied, green if free, yellow flash on page fault).
+#### Page/Segment Table:
+- **Paging**: Displays page mappings (e.g., `P1 Page 0 -> Frame 0` or `Disk`).  
+- **Segmentation**: Displays segment mappings (e.g., `P1 Seg 0 -> Base 0, Size 10KB`).  
+- **Virtual Memory**: Displays page mappings (e.g., `P1 Page 0 -> Frame 0` or `Swap 0`).  
+  - Includes a scrollbar for large tables.  
 
--In Segmentation: Shows memory segments (red) and free blocks (green), with a yellow flash on allocation.
+### **Right Section**
+- **Mode**: Current mode (**Paging, Segmentation, or Virtual Memory**).  
+- **Algorithm**: Current algorithm (**FIFO or LRU**).  
+- **Status**: Current simulation status (**Ready, Running, Finished, Paused - Error**).  
 
--In Virtual Memory: Shows memory frames (top) and swap space (bottom), with a yellow flash on page fault.
-
-##**Page/Segment Table:**
--In Paging: Shows page mappings (e.g., P1 Page 0 -> Frame 0 or Disk).
-
--In Segmentation: Shows segment mappings (e.g., P1 Seg 0 -> Base 0, Size 10KB).
-
--In Virtual Memory: Shows page mappings (e.g., P1 Page 0 -> Frame 0 or Swap 0), with a scrollbar for large tables.
-
-##**Right Section:**
--Mode: Current mode (Paging, Segmentation, or Virtual Memory).
-
--Algorithm: Current algorithm (FIFO or LRU).
-
--Status: Current simulation status (Ready, Running, Finished, Paused - Error).
-
-##**Bottom Section:**
--Text Input: For entering the sequence.
-
--Buttons: "*Start*", "*Step*", "*Reset*", mode buttons ("*Paging*", "*Segmentation*", "*Virtual Memory*"), and algorithm buttons ("*FIFO*", "*LRU*").
-
+### **Bottom Section**
+- **Text Input**: For entering the sequence.  
+- **Buttons**:  
+  - `"Start"`, `"Step"`, `"Reset"`.  
+  - Mode buttons: `"Paging"`, `"Segmentation"`, `"Virtual Memory"`.  
+  - Algorithm buttons: `"FIFO"`, `"LRU"`.  
