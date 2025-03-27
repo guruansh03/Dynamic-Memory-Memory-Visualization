@@ -1,92 +1,80 @@
-# server.py (or main.py)
 from flask import Flask, request, jsonify
 import collections
-import random
 from collections import namedtuple
+import random
+import logging
+
+# Set up logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 # Create the Flask app
 app = Flask(__name__)
 
 # Define the MemoryManagementSimulator class
 class MemoryManagementSimulator:
-    # Constructor method (indented 4 spaces under the class)
     def __init__(self, total_memory=32, page_size=4):
-        # All lines inside __init__ are indented 8 spaces (4 for class, 4 for method)
-        self.total_memory = total_memory  # Total memory in KB
-        self.page_size = page_size        # Page size in KB
-        self.frames = total_memory // page_size  # Number of frames (32 ÷ 4 = 8)
-        self.memory = [None] * self.frames  # Physical memory (frames)
-        self.page_table = {}  # Maps process pages to frames (process_id -> list of (page_num, frame) tuples)
-        self.disk = {}  # Simulated disk storage
+        self.total_memory = total_memory
+        self.page_size = page_size
+        self.frames = total_memory // page_size
+        self.memory = [None] * self.frames
+        self.page_table = {}
+        self.disk = {}
         self.page_replacement_algorithm = "FIFO"
-        self.page_queue = collections.deque()  # Track pages for FIFO
-        self.page_access = {}  # For LRU (not implemented)
-        self.page_faults = 0  # Track the number of page faults
-        self.last_page_fault = None  # Track the last page fault for visualization
+        self.page_queue = collections.deque()
+        self.page_access = {}
+        self.page_faults = 0
+        self.last_page_fault = None
 
-    # Method to allocate pages (indented 4 spaces under the class)
     def allocate_paging(self, process_id, num_pages):
-        """Allocate pages to a process using paging."""
-        # All lines inside this method are indented 8 spaces
+        process_id = str(process_id)  # Store as string
         if process_id not in self.page_table:
             self.page_table[process_id] = []
         
         for page_num in range(num_pages):
             page = (process_id, page_num)
-            # Add the page to the page table with frame -1 (not in memory yet)
             self.page_table[process_id].append((page_num, -1))
             
             if None in self.memory:
                 frame = self.memory.index(None)
                 self.memory[frame] = page
-                self.page_queue.append(page)  # Add to FIFO queue
-                # Update the page table with the frame number
+                self.page_queue.append(page)
                 self.page_table[process_id][-1] = (page_num, frame)
             else:
                 self.handle_page_fault(process_id, page)
-                frame = self.memory.index(None)  # After page fault, a frame should be free
+                frame = self.memory.index(None)
                 self.memory[frame] = page
-                self.page_queue.append(page)  # Add to FIFO queue
-                # Update the page table with the frame number
+                self.page_queue.append(page)
                 self.page_table[process_id][-1] = (page_num, frame)
 
-    # Method to handle page faults (indented 4 spaces under the class)
     def handle_page_fault(self, process_id, page_to_load):
-        """Handle page faults by replacing a page using FIFO or LRU."""
-        # All lines inside this method are indented 8 spaces
-        self.page_faults += 1  # Increment page fault count
+        self.page_faults += 1
         if not self.page_queue:
             return
 
         if self.page_replacement_algorithm == "FIFO":
-            old_page = self.page_queue.popleft()  # Remove the oldest page
-            # Find the frame containing the old page
+            old_page = self.page_queue.popleft()
             frame = None
             for i, page in enumerate(self.memory):
                 if page == old_page:
                     frame = i
                     break
             if frame is not None:
-                self.disk[old_page] = old_page  # Simulate writing to disk
-                self.memory[frame] = None  # Free the frame
-                self.last_page_fault = frame  # Track the frame for visualization
-                # Update the page table: mark the old page as not in memory
+                self.disk[old_page] = old_page
+                self.memory[frame] = None
+                self.last_page_fault = frame
                 old_pid, old_page_num = old_page
                 for i, (page_num, frame_num) in enumerate(self.page_table[old_pid]):
                     if frame_num == frame:
-                        self.page_table[old_pid][i] = (page_num, -1)  # Mark as not in memory
+                        self.page_table[old_pid][i] = (page_num, -1)
                         break
         elif self.page_replacement_algorithm == "LRU":
             old_page = min(self.page_access, key=self.page_access.get)
-            # LRU not implemented
             pass
 
-    # Method to simulate a page request (indented 4 spaces under the class)
     def simulate_page_request(self, process_id, page_num):
-        """Simulate a process requesting a page."""
-        # All lines inside this method are indented 8 spaces
+        process_id = str(process_id)  # Ensure consistency
         page = (process_id, page_num)
-        # Check if the page is in memory
         in_memory = False
         frame = None
         for i, mem_page in enumerate(self.memory):
@@ -98,15 +86,12 @@ class MemoryManagementSimulator:
         if not in_memory:
             print(f"Page fault! Process {process_id} requested page {page_num}.")
             self.handle_page_fault(process_id, page)
-            # After handling the page fault, load the requested page
             if None in self.memory:
                 frame = self.memory.index(None)
                 self.memory[frame] = page
                 self.page_queue.append(page)
-                # Update the page table
                 if process_id not in self.page_table:
                     self.page_table[process_id] = []
-                # Find the page in the page table and update its frame
                 found = False
                 for i, (p_num, f_num) in enumerate(self.page_table[process_id]):
                     if p_num == page_num:
@@ -115,17 +100,10 @@ class MemoryManagementSimulator:
                         break
                 if not found:
                     self.page_table[process_id].append((page_num, frame))
-        
-        self.page_access[page] = random.randint(1, 100)  # Simulate usage
 
-    # Method to display memory state (indented 4 spaces under the class)
     def display_memory(self):
-        """Return the current memory state and statistics."""
-        # All lines inside this method are indented 8 spaces
-        # Convert tuples to lists for JSON serialization
         memory_frames = [list(frame) if frame is not None else None for frame in self.memory]
-        disk_storage = {str(k): list(v) for k, v in self.disk.items()}  # Convert keys and values
-        # Convert page table to a JSON-serializable format
+        disk_storage = {str(k): list(v) for k, v in self.disk.items()}
         page_table = {str(k): [(p_num, f_num) for p_num, f_num in v] for k, v in self.page_table.items()}
         return {
             "Memory Frames": memory_frames,
@@ -141,111 +119,63 @@ Segment = namedtuple('Segment', ['process_id', 'segment_id', 'size', 'base_addre
 # Define the SegmentationMemorySimulator class
 class SegmentationMemorySimulator:
     def __init__(self, total_memory=32):
-        """
-        Initialize the segmentation memory simulator.
-        
-        Args:
-            total_memory (int): Total memory available in KB (default: 32 KB).
-        """
-        self.total_memory = total_memory  # Total memory in KB
-        self.memory = []  # List of (base_address, size, process_id, segment_id) tuples for allocated segments
-        self.free_blocks = [(0, total_memory)]  # List of (base_address, size) tuples for free blocks
-        self.segment_table = {}  # Maps process_id to list of segments: {process_id: [Segment, ...]}
-        self.allocation_failures = 0  # Track allocation failures (e.g., no space available)
-        self.last_allocation = None  # Track the last allocated segment for visualization
+        self.total_memory = total_memory
+        self.memory = []
+        self.free_blocks = [(0, total_memory)]
+        self.segment_table = {}
+        self.allocation_failures = 0
+        self.last_allocation = None
 
     def allocate_segmentation(self, process_id, segment_id, size):
-        """
-        Allocate a segment for a process using a first-fit strategy.
-        
-        Args:
-            process_id (int): ID of the process.
-            segment_id (int): ID of the segment (e.g., 0 for code, 1 for data).
-            size (int): Size of the segment in KB.
-        
-        Returns:
-            bool: True if allocation succeeded, False otherwise.
-        """
-        # Check if the process has a segment table entry
+        process_id = str(process_id)  # Store as string
         if process_id not in self.segment_table:
             self.segment_table[process_id] = []
 
-        # Find a free block using first-fit
         for i, (base, free_size) in enumerate(self.free_blocks):
             if free_size >= size:
-                # Allocate the segment
                 segment = Segment(process_id, segment_id, size, base)
                 self.memory.append((base, size, process_id, segment_id))
                 self.segment_table[process_id].append(segment)
                 self.last_allocation = (base, size, process_id, segment_id)
-
-                # Update the free block
                 new_base = base + size
                 new_size = free_size - size
                 self.free_blocks[i] = (new_base, new_size)
-
-                # If the remaining size is 0, remove the free block
                 if new_size == 0:
                     self.free_blocks.pop(i)
-
-                # Sort memory by base address for clarity
                 self.memory.sort(key=lambda x: x[0])
                 return True
 
-        # If no suitable block is found, increment allocation failures
         self.allocation_failures += 1
         return False
 
     def deallocate_segment(self, process_id, segment_id):
-        """
-        Deallocate a segment for a process and merge free blocks.
-        
-        Args:
-            process_id (int): ID of the process.
-            segment_id (int): ID of the segment to deallocate.
-        """
+        process_id = str(process_id)  # Ensure consistency
         if process_id not in self.segment_table:
             return
 
-        # Find the segment in the segment table
         for i, segment in enumerate(self.segment_table[process_id]):
             if segment.segment_id == segment_id:
                 base, size = segment.base_address, segment.size
-                # Remove from memory
                 self.memory = [entry for entry in self.memory if not (entry[2] == process_id and entry[3] == segment_id)]
-                # Remove from segment table
                 self.segment_table[process_id].pop(i)
-                # Add to free blocks
                 self.free_blocks.append((base, size))
                 break
 
-        # If the process has no more segments, remove its entry
         if not self.segment_table[process_id]:
             del self.segment_table[process_id]
 
-        # Sort free blocks by base address
         self.free_blocks.sort(key=lambda x: x[0])
-
-        # Merge contiguous free blocks
         i = 0
         while i < len(self.free_blocks) - 1:
             base1, size1 = self.free_blocks[i]
             base2, size2 = self.free_blocks[i + 1]
             if base1 + size1 == base2:
-                # Merge the blocks
                 self.free_blocks[i] = (base1, size1 + size2)
                 self.free_blocks.pop(i + 1)
             else:
                 i += 1
 
     def display_memory(self):
-        """
-        Return the current memory state for visualization.
-        
-        Returns:
-            dict: A dictionary containing memory state, segment table, free blocks, and statistics.
-        """
-        # Convert memory and segment table to JSON-serializable format
         memory_state = [(base, size, pid, sid) for base, size, pid, sid in self.memory]
         segment_table = {
             str(pid): [(seg.process_id, seg.segment_id, seg.size, seg.base_address) for seg in segments]
@@ -253,35 +183,183 @@ class SegmentationMemorySimulator:
         }
         free_blocks = [(base, size) for base, size in self.free_blocks]
         last_allocation = list(self.last_allocation) if self.last_allocation else None
-
         return {
-            "Memory State": memory_state,  # List of (base_address, size, process_id, segment_id)
-            "Segment Table": segment_table,  # {process_id: [(pid, sid, size, base), ...]}
-            "Free Blocks": free_blocks,  # List of (base_address, size)
+            "Memory State": memory_state,
+            "Segment Table": segment_table,
+            "Free Blocks": free_blocks,
             "Allocation Failures": self.allocation_failures,
             "Last Allocation": last_allocation
         }
 
     def reset(self):
-        """
-        Reset the memory state to initial conditions.
-        """
         self.memory = []
         self.free_blocks = [(0, self.total_memory)]
         self.segment_table = {}
         self.allocation_failures = 0
         self.last_allocation = None
 
-# Initialize the memory simulator (indented 0 spaces, outside the class)
+# Define the VirtualMemorySimulator class
+class VirtualMemorySimulator:
+    def __init__(self, total_memory=32, page_size=4, swap_size=64):
+        self.total_memory = total_memory
+        self.page_size = page_size
+        self.frames = total_memory // page_size
+        self.memory = [None] * self.frames
+        self.swap_size = swap_size
+        self.swap_frames = swap_size // page_size
+        self.swap = [None] * self.swap_frames
+        self.page_table = {}
+        self.page_replacement_algorithm = "FIFO"
+        self.page_queue = collections.deque()
+        self.page_faults = 0
+        self.swap_operations = 0
+        self.last_page_fault = None
+        logger.info(f"Initialized VirtualMemorySimulator with page_table: {self.page_table}")
+
+    def allocate_virtual(self, process_id, num_pages):
+        process_id = str(process_id)  # Store as string
+        if process_id not in self.page_table:
+            self.page_table[process_id] = []
+
+        for page_num in range(num_pages):
+            swap_frame = self.find_free_swap_frame()
+            if swap_frame is None:
+                raise ValueError("No free swap space available for page allocation")
+            self.page_table[process_id].append((page_num, swap_frame, False))
+            self.swap[swap_frame] = (process_id, page_num)
+        logger.info(f"After allocate_virtual for process {process_id}, page_table: {self.page_table}")
+
+    def handle_page_fault_with_swap(self, process_id, page_num):
+        process_id = str(process_id)  # Ensure consistency
+        self.page_faults += 1
+        page = (process_id, page_num)
+
+        swap_frame = None
+        for i, (p_num, f_num, in_mem) in enumerate(self.page_table.get(process_id, [])):
+            if p_num == page_num and not in_mem:
+                swap_frame = f_num
+                break
+
+        if swap_frame is None:
+            raise ValueError(f"Page {page_num} for process {process_id} not found in swap space")
+
+        free_frame = None
+        for i in range(len(self.memory)):
+            if self.memory[i] is None:
+                free_frame = i
+                break
+
+        if free_frame is not None:
+            self.load_page_into_memory(page, free_frame, swap_frame)
+        else:
+            if not self.page_queue:
+                raise ValueError("No pages in memory to evict")
+
+            old_frame = self.page_queue.popleft()
+            old_page = self.memory[old_frame]
+            if old_page is None:
+                raise ValueError("Invalid page in FIFO queue")
+
+            old_pid, old_pnum = old_page
+
+            new_swap_frame = self.find_free_swap_frame()
+            if new_swap_frame is None:
+                raise ValueError("No free swap space available for eviction")
+
+            self.swap[new_swap_frame] = old_page
+            self.swap_operations += 1
+
+            for i, (p_num, f_num, in_mem) in enumerate(self.page_table[old_pid]):
+                if p_num == old_pnum and in_mem and f_num == old_frame:
+                    self.page_table[old_pid][i] = (p_num, new_swap_frame, False)
+                    break
+
+            self.load_page_into_memory(page, old_frame, swap_frame)
+            self.last_page_fault = old_frame
+
+    def load_page_into_memory(self, page, frame, swap_frame):
+        process_id, page_num = page
+        self.memory[frame] = page
+        self.page_queue.append(frame)
+
+        for i, (p_num, f_num, in_mem) in enumerate(self.page_table[process_id]):
+            if p_num == page_num:
+                self.page_table[process_id][i] = (p_num, frame, True)
+                break
+
+        self.swap[swap_frame] = None
+
+    def find_free_swap_frame(self):
+        for i in range(self.swap_frames):
+            if self.swap[i] is None:
+                return i
+        return None
+
+    def simulate_page_request(self, process_id, page_num):
+        process_id = str(process_id)  # Ensure consistency
+        logger.info(f"Before simulate_page_request, page_table: {self.page_table}")
+        if process_id not in self.page_table:
+            raise ValueError(f"Process {process_id} not found in page table")
+        
+        page = (process_id, page_num)
+        in_memory = False
+        frame = None
+
+        page_exists = False
+        for p_num, f_num, in_mem in self.page_table[process_id]:
+            if p_num == page_num:
+                page_exists = True
+                if in_mem:
+                    in_memory = True
+                    frame = f_num
+                break
+
+        if not page_exists:
+            raise ValueError(f"Page {page_num} for process {process_id} does not exist in page table")
+
+        if not in_memory:
+            print(f"Page fault in virtual memory! Process {process_id} requested page {page_num}.")
+            self.handle_page_fault_with_swap(process_id, page_num)
+        else:
+            if frame in self.page_queue:
+                self.page_queue.remove(frame)
+                self.page_queue.append(frame)
+        logger.info(f"After simulate_page_request, page_table: {self.page_table}")
+
+    def display_memory(self):
+        memory_frames = [list(frame) if frame is not None else None for frame in self.memory]
+        swap_space = [list(frame) if frame is not None else None for frame in self.swap]
+        page_table = {
+            str(pid): [(p_num, f_num, in_mem) for p_num, f_num, in_mem in pages]
+            for pid, pages in self.page_table.items()
+        }
+        return {
+            "Memory Frames": memory_frames,
+            "Page Table": page_table,
+            "Swap Space": swap_space,
+            "Total Page Faults": self.page_faults,
+            "Swap Operations": self.swap_operations,
+            "Last Page Fault": self.last_page_fault
+        }
+
+    def reset(self):
+        self.memory = [None] * self.frames
+        self.swap = [None] * self.swap_frames
+        self.page_table = {}
+        self.page_queue = collections.deque()
+        self.page_faults = 0
+        self.swap_operations = 0
+        self.last_page_fault = None
+        logger.info(f"Reset VirtualMemorySimulator, page_table: {self.page_table}")
+
+# Initialize the simulators
 simulator = MemoryManagementSimulator()
-
-# Initialize the segmentation simulator
 segmentation_simulator = SegmentationMemorySimulator()
+virtual_simulator = VirtualMemorySimulator()
 
-# Flask routes (indented 0 spaces, outside the class)
+# Flask routes for Paging
 @app.route('/configure', methods=['POST'])
 def configure():
-    # All lines inside this function are indented 4 spaces
     data = request.get_json()
     if not data:
         return jsonify({"error": "Invalid JSON input."}), 400
@@ -295,7 +373,6 @@ def configure():
 
 @app.route('/allocate_paging', methods=['POST'])
 def allocate_paging():
-    # All lines inside this function are indented 4 spaces
     data = request.get_json()
     if not data:
         return jsonify({"error": "Invalid JSON input."}), 400
@@ -311,7 +388,6 @@ def allocate_paging():
 
 @app.route('/simulate_page_request', methods=['POST'])
 def simulate_page_request():
-    # All lines inside this function are indented 4 spaces
     data = request.get_json()
     if not data:
         return jsonify({"error": "Invalid JSON input."}), 400
@@ -322,23 +398,25 @@ def simulate_page_request():
     if process_id is None or page_num is None:
         return jsonify({"error": "Missing process_id or page_num."}), 400
     
-    simulator.simulate_page_request(process_id, page_num)
-    return jsonify({"message": "Page request simulated."})
+    try:
+        simulator.simulate_page_request(process_id, page_num)
+        return jsonify({"message": "Page request simulated."})
+    except Exception as e:
+        logger.error(f"Error in simulate_page_request: {str(e)}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/display_memory', methods=['GET'])
 def display_memory():
-    # All lines inside this function are indented 4 spaces
     memory_state = simulator.display_memory()
     return jsonify(memory_state)
 
 @app.route('/reset', methods=['POST'])
 def reset():
-    # All lines inside this function are indented 4 spaces
     global simulator
     simulator = MemoryManagementSimulator(simulator.total_memory, simulator.page_size)
     return jsonify({"message": "Memory state reset successfully."})
 
-# Flask routes for segmentation
+# Flask routes for Segmentation
 @app.route('/configure_segmentation', methods=['POST'])
 def configure_segmentation():
     data = request.get_json()
@@ -396,6 +474,88 @@ def reset_segmentation():
     segmentation_simulator = SegmentationMemorySimulator(segmentation_simulator.total_memory)
     return jsonify({"message": "Segmentation memory state reset successfully."})
 
-# Main block to run the Flask app (indented 0 spaces)
+# Flask routes for Virtual Memory
+@app.route('/configure_virtual', methods=['POST'])
+def configure_virtual():
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "Invalid JSON input."}), 400
+
+    total_memory = data.get('total_memory', 32)
+    page_size = data.get('page_size', 4)
+    swap_size = data.get('swap_size', 64)
+
+    global virtual_simulator
+    virtual_simulator = VirtualMemorySimulator(total_memory, page_size, swap_size)
+    return jsonify({"message": "Virtual memory configuration updated successfully."})
+
+@app.route('/allocate_virtual', methods=['POST'])
+def allocate_virtual():
+    data = request.get_json()
+    if not data:
+        logger.error("Invalid JSON input received in allocate_virtual")
+        return jsonify({"error": "Invalid JSON input."}), 400
+
+    process_id = data.get('process_id')
+    num_pages = data.get('num_pages')
+
+    logger.info(f"Received request to allocate virtual pages: process_id={process_id}, num_pages={num_pages}")
+
+    if process_id is None or num_pages is None:
+        logger.error("Missing process_id or num_pages in request")
+        return jsonify({"error": "Missing process_id or num_pages."}), 400
+    
+    try:
+        process_id = str(process_id)  # Store as string
+        num_pages = int(num_pages)
+        virtual_simulator.allocate_virtual(process_id, num_pages)
+        logger.info(f"Successfully allocated {num_pages} virtual pages for process {process_id}")
+        return jsonify({"message": "Virtual pages allocated successfully."})
+    except ValueError as e:
+        logger.error(f"ValueError in allocate_virtual: {str(e)}", exc_info=True)
+        return jsonify({"error": str(e)}), 400
+
+@app.route('/simulate_virtual_page_request', methods=['POST'])
+def simulate_virtual_page_request():
+    data = request.get_json()
+    if not data:
+        logger.error("Invalid JSON input received in simulate_virtual_page_request")
+        return jsonify({"error": "Invalid JSON input."}), 400
+
+    process_id = data.get('process_id')
+    page_num = data.get('page_num')
+
+    logger.info(f"Received request to simulate page request: process_id={process_id}, page_num={page_num}")
+
+    if process_id is None or page_num is None:
+        logger.error("Missing process_id or page_num in request")
+        return jsonify({"error": "Missing process_id or page_num."}), 400
+    
+    try:
+        process_id = str(process_id)  # Ensure consistency
+        page_num = int(page_num)
+        virtual_simulator.simulate_page_request(process_id, page_num)
+        logger.info(f"Successfully simulated page request for process {process_id}, page {page_num}")
+        return jsonify({"message": "Virtual page request simulated."})
+    except ValueError as e:
+        logger.error(f"ValueError in simulate_virtual_page_request: {str(e)}", exc_info=True)
+        return jsonify({"error": str(e)}), 404  # Use 404 for "not found" errors
+    except Exception as e:
+        logger.error(f"Unexpected error in simulate_virtual_page_request: {str(e)}", exc_info=True)
+        return jsonify({"error": f"Internal server error: {str(e)}"}), 500
+
+@app.route('/display_virtual_memory', methods=['GET'])
+def display_virtual_memory():
+    memory_state = virtual_simulator.display_memory()
+    return jsonify(memory_state)
+
+@app.route('/reset_virtual', methods=['POST'])
+def reset_virtual():
+    global virtual_simulator
+    virtual_simulator = VirtualMemorySimulator(virtual_simulator.total_memory, virtual_simulator.page_size, virtual_simulator.swap_size)
+    logger.info("Virtual memory state reset via /reset_virtual")
+    return jsonify({"message": "Virtual memory state reset successfully."})
+
+# Main block to run the Flask app
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True, use_reloader=False)  
