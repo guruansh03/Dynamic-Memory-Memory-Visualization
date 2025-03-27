@@ -206,26 +206,26 @@ python project.py
 ```
 A window will open with the graphical interface titled "Memory Management Visualizer - Pro Edition".
 
-Interacting with the Simulator
+**Interacting with the Simulator**
 Select Mode:
 Click one of the mode buttons at the bottom:
-"Paging": For fixed-size page allocation.
+"*Paging*": For fixed-size page allocation.
 
-"Segmentation": For variable-size segment allocation.
+"*Segmentation*": For variable-size segment allocation.
 
-"Virtual Memory": For paging with swap space.
+"*Virtual Memory*": For paging with swap space.
 
-The mode will be displayed in the "Mode" field on the right side of the window.
+The mode will be displayed in the "*Mode*" field on the right side of the window.
 
-Select Algorithm:
+**Select Algorithm:**
 Click one of the algorithm buttons:
-"FIFO": First-In, First-Out replacement.
+"*FIFO*": First-In, First-Out replacement.
 
-"LRU": Least Recently Used replacement.
+"*LRU*": Least Recently Used replacement.
 
-The selected algorithm will be displayed in the "Algorithm" field on the right.
+The selected algorithm will be displayed in the "*Algorithm*" field on the right.
 
-Enter Sequence:
+**Enter Sequence:**
 In the text input field at the bottom left:
 For Paging and Virtual Memory: Enter a comma-separated list of page numbers (e.g., 0,1,2).
 
@@ -233,51 +233,51 @@ For Segmentation: Enter segment ID and size pairs in the format seg_id:size (e.g
 
 Press Enter or click "Start" to parse the sequence.
 
-Start Simulation:
+**Start Simulation:**
 Click the "Start" button to initialize the simulation with the entered sequence.
 
-The "Status" field on the right will change to "Running".
+The *"Status"* field on the right will change to "Running".
 
-Step Through Simulation:
+**Step Through Simulation:**
 Click the "Step" button to process each request one at a time.
 
 Observe the changes in memory frames, swap space (Virtual Memory), free blocks (Segmentation), page/segment tables, and statistics.
 
-Reset Simulation:
+**Reset Simulation:**
 Click the "Reset" button to clear the memory state, reset statistics, and return to the initial state.
 
 The "Status" field will change to "Ready".
 
 Understanding the Interface
-Top Section:
-Title: "Memory Management Visualizer".
+**Top Section:**
+Title: "*Memory Management Visualizer*".
 
 Statistics: Displays page faults (Paging/Virtual Memory), allocation failures (Segmentation), swap operations (Virtual Memory), and memory usage percentage.
 
-Left Section:
-Memory Visualization:
-In Paging: Shows memory frames (red if occupied, green if free, yellow flash on page fault).
+**Left Section:**
+**Memory Visualization:**
+-In Paging: Shows memory frames (red if occupied, green if free, yellow flash on page fault).
 
-In Segmentation: Shows memory segments (red) and free blocks (green), with a yellow flash on allocation.
+-In Segmentation: Shows memory segments (red) and free blocks (green), with a yellow flash on allocation.
 
-In Virtual Memory: Shows memory frames (top) and swap space (bottom), with a yellow flash on page fault.
+-In Virtual Memory: Shows memory frames (top) and swap space (bottom), with a yellow flash on page fault.
 
-Page/Segment Table:
-In Paging: Shows page mappings (e.g., P1 Page 0 -> Frame 0 or Disk).
+**Page/Segment Table:**
+-In Paging: Shows page mappings (e.g., P1 Page 0 -> Frame 0 or Disk).
 
-In Segmentation: Shows segment mappings (e.g., P1 Seg 0 -> Base 0, Size 10KB).
+-In Segmentation: Shows segment mappings (e.g., P1 Seg 0 -> Base 0, Size 10KB).
 
-In Virtual Memory: Shows page mappings (e.g., P1 Page 0 -> Frame 0 or Swap 0), with a scrollbar for large tables.
+-In Virtual Memory: Shows page mappings (e.g., P1 Page 0 -> Frame 0 or Swap 0), with a scrollbar for large tables.
 
-Right Section:
-Mode: Current mode (Paging, Segmentation, or Virtual Memory).
+**Right Section:**
+-Mode: Current mode (Paging, Segmentation, or Virtual Memory).
 
-Algorithm: Current algorithm (FIFO or LRU).
+-Algorithm: Current algorithm (FIFO or LRU).
 
-Status: Current simulation status (Ready, Running, Finished, Paused - Error).
+-Status: Current simulation status (Ready, Running, Finished, Paused - Error).
 
-Bottom Section:
-Text Input: For entering the sequence.
+**Bottom Section:**
+-Text Input: For entering the sequence.
 
-Buttons: "Start", "Step", "Reset", mode buttons ("Paging", "Segmentation", "Virtual Memory"), and algorithm buttons ("FIFO", "LRU").
+-Buttons: "*Start*", "*Step*", "*Reset*", mode buttons ("*Paging*", "*Segmentation*", "*Virtual Memory*"), and algorithm buttons ("*FIFO*", "*LRU*").
 
