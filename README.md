@@ -82,21 +82,27 @@ cd memory-management-visualizer
 Replace your-username with your GitHub username. If you don't have Git installed, you can download the ZIP file from GitHub and extract it.
 Step 2: Set Up a Virtual Environment
 It's recommended to use a virtual environment to manage dependencies and avoid conflicts with other projects:
-bash
+
+```bash
 
 python -m venv venv
 
+```
 Activate the virtual environment:
 On Windows:
-bash
+
+```bash
 
 venv\Scripts\activate
 
+```
 On macOS/Linux:
-bash
+
+```bash
 
 source venv/bin/activate
 
+```
 You should see (venv) in your terminal prompt, indicating the virtual environment is active.
 Step 3: Install Dependencies
 The project requires the following Python packages:
@@ -107,10 +113,12 @@ requests: For HTTP communication between the client and server.
 pygame: For the graphical interface.
 
 Install them using pip:
-bash
+
+```bash
 
 pip install flask requests pygame
 
+```
 Specific versions tested:
 flask==2.0.1
 
@@ -120,24 +128,31 @@ pygame==2.1.2
 
 Alternatively, you can create a requirements.txt file with the following content:
 
+```bash
 flask==2.0.1
 requests==2.28.1
 pygame==2.1.2
 
+```
 Then install using:
-bash
+
+```bash
 
 pip install -r requirements.txt
 
+```
 Step 4: Verify Installation
 Check that the dependencies are installed correctly:
-bash
+
+```bash
 
 pip list
 
+```
 You should see flask, requests, and pygame in the list. If any package is missing, reinstall it using pip install <package-name>.
 Project Structure
 
+```bash
 memory-management-visualizer/
 │
 ├── main.py              # Backend server (Flask) handling memory management logic
@@ -145,6 +160,8 @@ memory-management-visualizer/
 ├── README.md            # Project documentation (this file)
 └── requirements.txt     # List of dependencies (optional, for reference)
 
+
+```
 main.py: Implements the memory management logic for Paging, Segmentation, and Virtual Memory. It runs a Flask server on http://localhost:5000 with basic authentication (username: admin, password: password123).
 
 project.py: Provides the graphical interface using Pygame. It communicates with the backend via HTTP requests to visualize memory states and statistics.
@@ -159,10 +176,12 @@ The backend server (main.py) must be running before starting the frontend client
 Open a terminal in the project directory.
 
 Run the Flask server:
-bash
+
+```bash
 
 python main.py
 
+```
 The server will start on http://localhost:5000. You should see output like:
 
 * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)
@@ -179,10 +198,12 @@ bash
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 Run the Pygame client:
-bash
+
+```bash
 
 python project.py
 
+```
 A window will open with the graphical interface titled "Memory Management Visualizer - Pro Edition".
 
 Interacting with the Simulator
