@@ -206,7 +206,7 @@ python project.py
 ```
 A window will open with the graphical interface titled "Memory Management Visualizer - Pro Edition".
 
-**Interacting with the Simulator**
+##**Interacting with the Simulator**
 Select Mode:
 Click one of the mode buttons at the bottom:
 "*Paging*": For fixed-size page allocation.
@@ -233,7 +233,7 @@ For Segmentation: Enter segment ID and size pairs in the format seg_id:size (e.g
 
 Press Enter or click "Start" to parse the sequence.
 
-**Start Simulation:**
+##**Start Simulation:**
 Click the "Start" button to initialize the simulation with the entered sequence.
 
 The *"Status"* field on the right will change to "Running".
@@ -249,12 +249,12 @@ Click the "Reset" button to clear the memory state, reset statistics, and return
 The "Status" field will change to "Ready".
 
 Understanding the Interface
-**Top Section:**
+##**Top Section:**
 Title: "*Memory Management Visualizer*".
 
 Statistics: Displays page faults (Paging/Virtual Memory), allocation failures (Segmentation), swap operations (Virtual Memory), and memory usage percentage.
 
-**Left Section:**
+##**Left Section:**
 **Memory Visualization:**
 -In Paging: Shows memory frames (red if occupied, green if free, yellow flash on page fault).
 
@@ -262,21 +262,21 @@ Statistics: Displays page faults (Paging/Virtual Memory), allocation failures (S
 
 -In Virtual Memory: Shows memory frames (top) and swap space (bottom), with a yellow flash on page fault.
 
-**Page/Segment Table:**
+##**Page/Segment Table:**
 -In Paging: Shows page mappings (e.g., P1 Page 0 -> Frame 0 or Disk).
 
 -In Segmentation: Shows segment mappings (e.g., P1 Seg 0 -> Base 0, Size 10KB).
 
 -In Virtual Memory: Shows page mappings (e.g., P1 Page 0 -> Frame 0 or Swap 0), with a scrollbar for large tables.
 
-**Right Section:**
+##**Right Section:**
 -Mode: Current mode (Paging, Segmentation, or Virtual Memory).
 
 -Algorithm: Current algorithm (FIFO or LRU).
 
 -Status: Current simulation status (Ready, Running, Finished, Paused - Error).
 
-**Bottom Section:**
+##**Bottom Section:**
 -Text Input: For entering the sequence.
 
 -Buttons: "*Start*", "*Step*", "*Reset*", mode buttons ("*Paging*", "*Segmentation*", "*Virtual Memory*"), and algorithm buttons ("*FIFO*", "*LRU*").
