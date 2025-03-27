@@ -186,6 +186,7 @@ def draw_table(screen, page_table, mode, scroll_offset=0, max_visible_entries=5,
     screen.blit(title, (20, 220))
     y = 250
     entry_height = 30
+
     if mode == "Virtual Memory":
         total_entries = sum(len(pages) for pid, pages in page_table.items())
         if total_entries <= max_visible_entries:
@@ -226,15 +227,30 @@ def draw_table(screen, page_table, mode, scroll_offset=0, max_visible_entries=5,
                 (down_button_rect.centerx - 5, down_button_rect.centery - 5),
                 (down_button_rect.centerx + 5, down_button_rect.centery - 5)
             ])
-    else:
+    elif mode == "Segmentation":
+        # Handle Segment Table
+        for process_id, segments in page_table.items():
+            for segment in segments:
+                # Unpack the segment entry: (process_id, segment_id, size, base_address)
+                proc_id, seg_id, size, base = segment
+                text = f"P{proc_id} Seg {seg_id} -> Base {base}, Size {size}KB"
+                text_surface = TEXT_FONT.render(text, True, TEXT_COLOR)
+                screen.blit(text_surface, (20, y))
+                y += 30
+                if y > 400:
+                    break
+            if y > 400:
+                break
+    else:  # Paging mode
         for process_id, pages in page_table.items():
-            for i, page in enumerate(pages):
-                if page is not None:
-                    text = TEXT_FONT.render(f"P{process_id} Page {i} -> Frame {page}", True, TEXT_COLOR)
-                    screen.blit(text, (20, y))
-                    y += 30
-                    if y > 400:
-                        break
+            for page_num, frame in pages:
+                location = f"Frame {frame}" if frame != -1 else "Disk"
+                text = f"P{process_id} Page {page_num} -> {location}"
+                text_surface = TEXT_FONT.render(text, True, TEXT_COLOR)
+                screen.blit(text_surface, (20, y))
+                y += 30
+                if y > 400:
+                    break
             if y > 400:
                 break
     return scroll_offset
@@ -266,7 +282,26 @@ def check_api_availability():
         print(f"API check failed: {e}")
         return False
 
-def get_memory_state():
+def set_algorithm(algorithm, mode):
+    try:
+        if mode == "Paging":
+            endpoint = f"{API_BASE_URL}/set_algorithm"
+        elif mode == "Segmentation":
+            endpoint = f"{API_BASE_URL}/set_segmentation_algorithm"
+        else:  # Virtual Memory
+            endpoint = f"{API_BASE_URL}/set_virtual_algorithm"
+        
+        response = requests.post(endpoint, json={"algorithm": algorithm}, auth=AUTH)
+        response.raise_for_status()
+        print(f"Set algorithm to {algorithm} for {mode} mode: {response.json()}")
+    except requests.RequestException as e:
+        error_msg = str(e)
+        if hasattr(e, 'response') and e.response is not None:
+            error_msg += f" (Response: {e.response.text})"
+        print(f"Failed to set algorithm on server: {error_msg}")
+        raise Exception(f"Failed to set algorithm: {error_msg}")
+
+def get_memory_state(algorithm):
     try:
         response = requests.get(f"{API_BASE_URL}/display_memory", auth=AUTH)
         response.raise_for_status()
@@ -277,7 +312,7 @@ def get_memory_state():
             "page_faults": state["Total Page Faults"],
             "memory_used": (sum(1 for f in state["Memory Frames"] if f is not None) * 100) // len(state["Memory Frames"]),
             "mode": "Paging",
-            "algorithm": "FIFO",
+            "algorithm": algorithm,
             "last_page_fault": state.get("Last Page Fault")
         }
     except requests.RequestException as e:
@@ -288,13 +323,13 @@ def get_memory_state():
             "page_faults": 0,
             "memory_used": 0,
             "mode": "Paging",
-            "algorithm": "FIFO",
+            "algorithm": algorithm,
             "last_page_fault": None
         }
 
 def allocate_page(process_id, page_num):
     try:
-        payload = {"process_id": str(process_id), "num_pages": 1}  # Send as string
+        payload = {"process_id": str(process_id), "page_num": page_num}  # Send as string
         print(f"Sending allocate_paging request with payload: {payload}")
         response = requests.post(f"{API_BASE_URL}/allocate_paging", json=payload, auth=AUTH)
         response.raise_for_status()
@@ -328,7 +363,7 @@ def reset_memory():
     except requests.RequestException as e:
         print(f"Error resetting memory state: {e}")
 
-def get_segmentation_memory_state():
+def get_segmentation_memory_state(algorithm):
     try:
         response = requests.get(f"{API_BASE_URL}/display_segmentation_memory", auth=AUTH)
         response.raise_for_status()
@@ -343,7 +378,7 @@ def get_segmentation_memory_state():
             "allocation_failures": state["Allocation Failures"],
             "memory_used": memory_used_percent,
             "mode": "Segmentation",
-            "algorithm": "First-Fit",
+            "algorithm": algorithm,
             "last_allocation": state.get("Last Allocation")
         }
     except requests.RequestException as e:
@@ -355,7 +390,7 @@ def get_segmentation_memory_state():
             "allocation_failures": 0,
             "memory_used": 0,
             "mode": "Segmentation",
-            "algorithm": "First-Fit",
+            "algorithm": algorithm,
             "last_allocation": None
         }
 
@@ -381,7 +416,7 @@ def reset_segmentation_memory():
     except requests.RequestException as e:
         print(f"Error resetting segmentation memory state: {e}")
 
-def get_virtual_memory_state():
+def get_virtual_memory_state(algorithm):
     try:
         response = requests.get(f"{API_BASE_URL}/display_virtual_memory", auth=AUTH)
         response.raise_for_status()
@@ -394,7 +429,7 @@ def get_virtual_memory_state():
             "swap_operations": state["Swap Operations"],
             "memory_used": (sum(1 for f in state["Memory Frames"] if f is not None) * 100) // len(state["Memory Frames"]),
             "mode": "Virtual Memory",
-            "algorithm": "FIFO",
+            "algorithm": algorithm,
             "last_page_fault": state.get("Last Page Fault")
         }
     except requests.RequestException as e:
@@ -407,7 +442,7 @@ def get_virtual_memory_state():
             "swap_operations": 0,
             "memory_used": 0,
             "mode": "Virtual Memory",
-            "algorithm": "FIFO",
+            "algorithm": algorithm,
             "last_page_fault": None
         }
 
@@ -427,7 +462,6 @@ def allocate_virtual_pages(process_id, num_pages):
 
 def simulate_virtual_page_request(process_id, page_num, max_page_num=None):
     try:
-        # Send process_id and page_num as strings to match server expectations
         payload = {"process_id": str(process_id), "page_num": str(page_num)}
         print(f"Sending simulate_virtual_page_request with payload: {payload}")
         response = requests.post(f"{API_BASE_URL}/simulate_virtual_page_request", json=payload, auth=AUTH)
@@ -437,11 +471,9 @@ def simulate_virtual_page_request(process_id, page_num, max_page_num=None):
         error_msg = str(e)
         if hasattr(e, 'response') and e.response is not None:
             error_msg += f" (Response: {e.response.text})"
-            # Handle "not found" error by re-allocating pages
             if e.response.status_code == 404 and "not found in page table" in e.response.text.lower() and max_page_num is not None:
                 print(f"Process {process_id} not found in page table. Reallocating pages...")
                 allocate_virtual_pages(process_id, max_page_num + 1)
-                # Retry the request
                 response = requests.post(f"{API_BASE_URL}/simulate_virtual_page_request", json=payload, auth=AUTH)
                 response.raise_for_status()
                 print(f"Virtual page request simulated after reallocation: {response.json()}")
@@ -469,14 +501,15 @@ def run_project():
     status = "Ready"
     input_active = True
     frame_counter = 0
-    memory_state = get_memory_state()
-    segmentation_memory_state = get_segmentation_memory_state()
-    virtual_memory_state = get_virtual_memory_state()
+    memory_state = get_memory_state(algorithm)
+    segmentation_memory_state = get_segmentation_memory_state(algorithm)
+    virtual_memory_state = get_virtual_memory_state(algorithm)
     flash_timer = 0
     scroll_offset = 0
     max_visible_entries = 5
     scroll_speed = 1
     max_page_num = None
+    allocated_pages = set()  # Track allocated pages for Paging mode
 
     # UI Elements
     sequence_input = TextInput(20, 450, 300, 40, "Enter Sequence (e.g., 0,1,2):")
@@ -492,7 +525,7 @@ def run_project():
     down_button_rect = pygame.Rect(280, 370, 20, 20)
 
     def start_simulation():
-        nonlocal sequence, input_active, step, status, max_page_num
+        nonlocal sequence, input_active, step, status, max_page_num, allocated_pages
         try:
             if not check_api_availability():
                 raise Exception(f"API at {API_BASE_URL} is not responding. Start the server.")
@@ -508,6 +541,7 @@ def run_project():
                 if mode == "Virtual Memory":
                     max_page_num = max(sequence_numbers)
                     allocate_virtual_pages(1, max_page_num + 1)
+                # For Paging mode, we no longer pre-allocate pages here
             else:  # Segmentation
                 sequence = []
                 for item in split_input:
@@ -516,6 +550,7 @@ def run_project():
             input_active = False
             step = 0
             status = "Running"
+            allocated_pages = set()  # Reset allocated pages
             print(f"Simulation started with sequence: {sequence}")
         except ValueError as e:
             sequence_input.text = f"Invalid input: {e}. Use 0,1,2 or 0:4,1:8"
@@ -525,7 +560,7 @@ def run_project():
             input_active = True
 
     def step_simulation():
-        nonlocal step, status, input_active, memory_state, segmentation_memory_state, virtual_memory_state, flash_timer
+        nonlocal step, status, input_active, memory_state, segmentation_memory_state, virtual_memory_state, flash_timer, allocated_pages
         try:
             if not check_api_availability():
                 sequence_input.text = f"API at {API_BASE_URL} is not responding. Start the server."
@@ -539,21 +574,26 @@ def run_project():
             print(f"Stepping: {step}/{len(sequence)}, Data: {sequence[step]}")
             if mode == "Paging":
                 process_id, page_num = sequence[step]
-                allocate_page(process_id, page_num)
+                # Allocate the page if it hasn't been allocated yet
+                page_key = (process_id, page_num)
+                if page_key not in allocated_pages:
+                    allocate_page(process_id, page_num)
+                    allocated_pages.add(page_key)
+                # Simulate the page request
                 simulate_page_request(process_id, page_num)
-                memory_state = get_memory_state()
+                memory_state = get_memory_state(algorithm)
                 if memory_state["last_page_fault"] is not None:
                     flash_timer = 30
             elif mode == "Segmentation":
                 process_id, segment_id, size = sequence[step]
                 allocate_segment(process_id, segment_id, size)
-                segmentation_memory_state = get_segmentation_memory_state()
+                segmentation_memory_state = get_segmentation_memory_state(algorithm)
                 if segmentation_memory_state["last_allocation"] is not None:
                     flash_timer = 30
             else:  # Virtual Memory
                 process_id, page_num = sequence[step]
                 simulate_virtual_page_request(process_id, page_num, max_page_num)
-                virtual_memory_state = get_virtual_memory_state()
+                virtual_memory_state = get_virtual_memory_state(algorithm)
                 if virtual_memory_state["last_page_fault"] is not None:
                     flash_timer = 30
             step += 1
@@ -565,7 +605,7 @@ def run_project():
             print(f"Step simulation failed: {e}")
 
     def reset_simulation():
-        nonlocal step, sequence, input_active, status, memory_state, segmentation_memory_state, virtual_memory_state, flash_timer, scroll_offset, max_page_num
+        nonlocal step, sequence, input_active, status, memory_state, segmentation_memory_state, virtual_memory_state, flash_timer, scroll_offset, max_page_num, allocated_pages
         if mode == "Paging":
             reset_memory()
         elif mode == "Segmentation":
@@ -577,12 +617,13 @@ def run_project():
         input_active = True
         status = "Ready"
         sequence_input.reset()
-        memory_state = get_memory_state()
-        segmentation_memory_state = get_segmentation_memory_state()
-        virtual_memory_state = get_virtual_memory_state()
+        memory_state = get_memory_state(algorithm)
+        segmentation_memory_state = get_segmentation_memory_state(algorithm)
+        virtual_memory_state = get_virtual_memory_state(algorithm)
         flash_timer = 0
         scroll_offset = 0
         max_page_num = None
+        allocated_pages = set()
         print("Simulation reset")
 
     def switch_to_paging():
@@ -590,13 +631,15 @@ def run_project():
         mode = "Paging"
         algorithm = "FIFO"
         sequence_input.label = LABEL_FONT.render("Enter Sequence (e.g., 0,1,2):", True, TEXT_COLOR)
+        set_algorithm(algorithm, mode)
         reset_simulation()
 
     def switch_to_segmentation():
         nonlocal mode, algorithm
         mode = "Segmentation"
-        algorithm = "First-Fit"
+        algorithm = "FIFO"  # Default to FIFO for Segmentation
         sequence_input.label = LABEL_FONT.render("Enter Sequence (e.g., 0:4,1:8):", True, TEXT_COLOR)
+        set_algorithm(algorithm, mode)
         reset_simulation()
 
     def switch_to_virtual_memory():
@@ -604,7 +647,20 @@ def run_project():
         mode = "Virtual Memory"
         algorithm = "FIFO"
         sequence_input.label = LABEL_FONT.render("Enter Sequence (e.g., 0,1,2):", True, TEXT_COLOR)
+        set_algorithm(algorithm, mode)
         reset_simulation()
+
+    def set_fifo():
+        nonlocal algorithm
+        algorithm = "FIFO"
+        set_algorithm(algorithm, mode)
+        print(f"Algorithm set to {algorithm}")
+
+    def set_lru():
+        nonlocal algorithm
+        algorithm = "LRU"
+        set_algorithm(algorithm, mode)
+        print(f"Algorithm set to {algorithm}")
 
     # Assign actions
     start_button.action = start_simulation
@@ -613,8 +669,8 @@ def run_project():
     paging_button.action = switch_to_paging
     seg_button.action = switch_to_segmentation
     vm_button.action = switch_to_virtual_memory
-    fifo_button.action = lambda: None  # Placeholder
-    lru_button.action = lambda: None  # Placeholder
+    fifo_button.action = set_fifo
+    lru_button.action = set_lru
 
     # Main loop
     while running:
