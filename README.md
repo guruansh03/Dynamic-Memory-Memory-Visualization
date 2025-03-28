@@ -126,7 +126,6 @@ requests==2.28.1
 
 pygame==2.1.2
 
-Alternatively, you can create a requirements.txt file with the following content:
 
 ```bash
 flask==2.0.1
@@ -134,13 +133,8 @@ requests==2.28.1
 pygame==2.1.2
 
 ```
-Then install using:
 
-```bash
 
-pip install -r requirements.txt
-
-```
 Step 4: Verify Installation
 Check that the dependencies are installed correctly:
 
@@ -158,7 +152,6 @@ memory-management-visualizer/
 ├── main.py              # Backend server (Flask) handling memory management logic
 ├── project.py           # Frontend client (Pygame) for visualization
 ├── README.md            # Project documentation (this file)
-└── requirements.txt     # List of dependencies (optional, for reference)
 
 
 ```
@@ -168,7 +161,7 @@ project.py: Provides the graphical interface using Pygame. It communicates with 
 
 README.md: Contains detailed instructions for installation, usage, and test cases.
 
-requirements.txt: Lists the required Python packages (optional, for reference).
+
 
 Usage
 Running the Backend Server
